@@ -1,0 +1,109 @@
+
+
+```python
+**Defined Authorization Information & API_PATH**
+```
+
+
+```python
+headers = {
+    'Authorization': "JWT Token Info",
+    'content-type': MULTIPART
+}
+
+API_PATH = 'http://127.0.0.1:8000/graphql/'
+```
+
+**Created Query Text for DigitalContentCreate**
+
+
+```python
+query = """
+mutation DigitalContentUploadInput($contentFile: DigitalContentUploadInput!, $variantID: ID!) {
+        digitalContentCreate(input: $contentFile, variantId: $variantID) {
+        content {
+              id
+            }
+            productErrors {
+                field
+                message
+            }
+        }
+}
+"""
+```
+
+**Defined Test Image Generator (From Product Tests)**
+
+
+```python
+def create_image(image_name="product2"):
+    img_data = BytesIO()
+    image = Image.new("RGB", size=(1, 1), color=(255, 0, 0, 0))
+    image.save(img_data, format="JPEG")
+    image = SimpleUploadedFile(image_name + ".jpg", img_data.getvalue(), "image/png")
+    return image, image_name
+```
+
+**Defined Multi-Part Formatter (From Product Tests)**
+
+
+```python
+def get_multipart_request_body(query, variables, file, file_name):
+    return {
+        "operations": json.dumps(
+            {"query": query, "variables": variables}, cls=DjangoJSONEncoder
+        ),
+        "map": json.dumps({file_name: ["variables.file"]}, cls=DjangoJSONEncoder),
+        file_name: file,
+    }
+
+```
+
+**Defined Method To Populate Multi-Part Body**
+
+
+```python
+def test_dig_create(product_id):
+    image_file, image_name = create_image()
+    variables = {
+        "contentFile": image_name,
+        "variantID": product_id,
+    }
+    multipart = get_multipart_request_body(query, variables, image_file, image_name)
+    return multipart
+```
+
+**Defined Methods to Post**
+
+
+```python
+def post_multipart(data):
+    response = requests.post(API_PATH, data)
+    return response
+```
+
+**Defined Method To Create Digital Content**
+
+
+```python
+def create_dig_content(product_id):
+    multipart = test_dig_create(product_id)
+    gql_response = post_multipart(multipart)
+    return gql_response
+```
+
+**Defined Product ID & Called Method**
+
+
+```python
+product_id = 'myproductvariantid'
+response = create_dig_content(product_id)
+```
+
+**Error Returned**
+
+> ERROR saleor.graphql.errors.unhandled A query failed unexpectedly
+> **[PID:22790:Thread-9]** ValueError: Must provide a query string.
+
+Def.py
